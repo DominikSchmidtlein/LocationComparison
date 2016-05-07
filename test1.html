@@ -88,6 +88,7 @@
     }
     
 
+
     function calculateDistances() {
       markers = [];
       // get sources and destinations and travel modes
@@ -119,34 +120,11 @@
 
           directionsRenderer.setMap(map);
 
-          // marker on source
-          // geocoder.geocode({'address': sources[0]}, function(results, status) {
-          //   if (status == google.maps.GeocoderStatus.OK) {
-          //     var marker = new google.maps.Marker({
-          //       position: results[0].geometry.location,
-          //       map: map
-          //     });
-          //     markers.push(marker);
-          //   }
-          // });
-
           geocode(sources[0], addMarker, null);
 
           var results = response.rows[0].elements;
           for (var j = 0; j < results.length; j++) {
             populateRow(j, sources[0], destinations[j], travelModes[0], results[j].distance.text, results[j].duration.text);
-
-            // marker on destinations
-            // geocoder.geocode({'address': destinations[j]}, function(results, status) {
-            //   if (status == google.maps.GeocoderStatus.OK) {
-            //     var marker = new google.maps.Marker({
-            //       position: results[0].geometry.location,
-            //       map: map
-            //     });
-            //     markers.push(marker);
-                
-            //   }
-            // });
             
             geocode(destinations[j], addMarker, fitBounds);
 
@@ -160,7 +138,21 @@
             //     directionsRenderer.setDirections(response);
             //   }
             // });
+
+            getRoute(sources[0], destinations[0], travelModes[0]);
           }
+        }
+      });
+    }
+
+    function getRoute(src, dest, tMode) {
+      directionsService.route({
+        origin: src,
+        destination: dest,
+        travelMode: tMode
+      }, function(response, status) {
+        if(status == google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(response);
         }
       });
     }
