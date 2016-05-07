@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Map</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- <form>
+    <input type="textbox" name="address-source" placeholder="center address">
+    <input type="textbox" name="address-destination" placeholder="compare address">
+    <input type="textbox" name="address-destination" placeholder="compare address">
+    <input type="textbox" name="address-destination" placeholder="compare address">
+    <input type="textbox" name="address-destination" placeholder="compare address">
+    <input type="radio" name="transportation" value="DRIVING" checked>Car
+    <input type="radio" name="transportation" value="TRANSIT">Transit
+    <input type="radio" name="transportation" value="BICYCLING">Bike
+    <input type="radio" name="transportation" value="WALKING">Walk
+    <input type="button" value="Submit" onclick="return calculateDistances()">
+  </form> -->
+  <div>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Transportation</th>
+          <th>Distance</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      </tbody>
+    </table>
+    <input type="button" value="Add Row" onclick="return addRow()">
+    <input type="button" value="Submit" onclick="return calculateDistances()">
+  </div>
+  <div id="map"></div>
+  <template id="row-template">
+    <tr>
+      <td><input type="text" name="source-address"></input></td>
+      <td><input type="text" name="destination-address"></input></td>
+      <td>
+        <select name="travel-mode">
+          <option value="DRIVING">Car</option>
+          <option value="TRANSIT">Transit</option>
+          <option value="BICYCLING">Bike</option>
+          <option value="WALKING">Walk</option>
+        </select>
+      </td>
+      <td name="distance"></td>
+      <td name="duration"></td>
+    </tr>
+  </template>
+  <script>
+    var map;
+    var geocoder;
+    var distanceMatrix;
+    var directionsService;
+    var directionsDisplay;
+    var markers;
+
+    function initMap() {
+      geocoder = new google.maps.Geocoder();
+      distanceMatrix = new google.maps.DistanceMatrixService();
+      directionsService = new google.maps.DirectionsService;
+      directionsRenderer = new google.maps.DirectionsRenderer;
+    }
+
+    function centerByAddress(address) {
+      geocoder.geocode({'address':address}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          map.setCenter(results[0].geometry.location);
+        } else {
+          alert("Unsuccessful");
+        }
+      });
+    }
+    
+
+    function calculateDistances() {
+      markers = [];
+      // get sources and destinations and travel modes
+      var rows = document.getElementById('table-body').children;
+    
+      var sources = [rows.length];
+      var destinations = [rows.length];
+      var travelModes = [rows.length];
+
+      for(var i = 0; i < rows.length; i++) {
+        sources[i] = rows[i].cells[0].children[0].value;
+        destinations[i] = rows[i].cells[1].children[0].value;
+        travelModes[i] = rows[i].cells[2].children[0].value;
+      }
+
+      distanceMatrix.getDistanceMatrix({
+        origins: [sources[0]],
+        destinations: destinations,
+        travelMode: travelModes[0]
+      }, function(response, status) {
+        if (status == google.maps.DistanceMatrixStatus.OK) {
+          sources[0] = response.originAddresses[0];
+          destinations = response.destinationAddresses;
+
+          map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 0, lng: 0},
+            zoom: 8
+          });
+
+          directionsRenderer.setMap(map);
+
+          // marker on source
+          // geocoder.geocode({'address': sources[0]}, function(results, status) {
+          //   if (status == google.maps.GeocoderStatus.OK) {
+          //     var marker = new google.maps.Marker({
+          //       position: results[0].geometry.location,
+          //       map: map
+          //     });
+          //     markers.push(marker);
+          //   }
+          // });
+
+          geocode(sources[0], addMarker, null);
+
+          var results = response.rows[0].elements;
+          for (var j = 0; j < results.length; j++) {
+            populateRow(j, sources[0], destinations[j], travelModes[0], results[j].distance.text, results[j].duration.text);
+
+            // marker on destinations
+            // geocoder.geocode({'address': destinations[j]}, function(results, status) {
+            //   if (status == google.maps.GeocoderStatus.OK) {
+            //     var marker = new google.maps.Marker({
+            //       position: results[0].geometry.location,
+            //       map: map
+            //     });
+            //     markers.push(marker);
+                
+            //   }
+            // });
+            
+            geocode(destinations[j], addMarker, fitBounds);
+
+            // display directions on map
+            // directionsService.route({
+            //   origin: source,
+            //   destination: destinations[j],
+            //   travelMode: travelMode
+            // }, function(response, status) {
+            //   if(status == google.maps.DirectionsStatus.OK) {
+            //     directionsRenderer.setDirections(response);
+            //   }
+            // });
+          }
+        }
+      });
+    }
+
+    function geocode(address, marker, callback) {
+      geocoder.geocode({'address': address}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          if(marker) marker(results[0].geometry.location);
+          if (callback) callback();  
+          return results[0].geometry.location;
+        }
+      });
+    }
+
+    function addMarker(location) {
+      var marker = new google.maps.Marker({
+        position: location,
+        map: map
+      });
+      markers.push(marker);
+      return marker;
+    }
+
+    function fitBounds() {
+      var bounds = new google.maps.LatLngBounds();
+      for (var i = 0; i <  markers.length; i++) {
+        bounds.extend(markers[i].getPosition());
+      }
+      map.fitBounds(bounds);
+    }
+
+    var rowTemplate = document.getElementById("row-template");
+    function addRow() {
+      var tableBody = document.getElementById("table-body");
+      var clone = document.importNode(rowTemplate.cloneNode(true).content, true);
+      tableBody.appendChild(clone);
+    }
+
+    function populateRow(index, src, dest, trans, distance, duration) {
+      var tableRow = document.getElementById("table-body").children[index];
+      tableRow.children[0].children[0].value = src;
+      tableRow.children[1].children[0].value = dest;
+      tableRow.children[2].children[0].value = trans;
+      tableRow.children[3].innerHTML = distance;
+      tableRow.children[4].innerHTML = duration;
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsLNoI0qIGImUA31Fbz9YZeAZXMMmHktg&callback=initMap"async defer></script>
+</body>
+</html>
+
