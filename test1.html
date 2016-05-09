@@ -13,9 +13,6 @@
     #map {
       height: 100%;
     }
-    #table-body tr:hover {
-      background-color: yellow;
-    }
   </style>
 </head>
 <body>
@@ -28,6 +25,7 @@
           <th>Transportation</th>
           <th>Distance</th>
           <th>Duration</th>
+          <th>Display Route</th>
         </tr>
       </thead>
       <tbody id="table-body">
@@ -38,9 +36,9 @@
   </div>
   <div id="map"></div>
   <template id="row-template">
-    <tr onclick="return onRowClick()">
-      <td><input type="text" name="source-address"></input></td>
-      <td><input type="text" name="destination-address"></input></td>
+    <tr>
+      <td><input type="text" name="source-address"></td>
+      <td><input type="text" name="destination-address"></td>
       <td>
         <select name="travel-mode">
           <option value="DRIVING">Car</option>
@@ -51,6 +49,7 @@
       </td>
       <td name="distance"></td>
       <td name="duration"></td>
+      <td><input type="checkbox"></td>
     </tr>
   </template>
   <script>
@@ -58,27 +57,13 @@
     var geocoder;
     var distanceMatrix;
     var directionsService;
-    var directionsDisplay;
     var markers;
 
     function initMap() {
       geocoder = new google.maps.Geocoder();
       distanceMatrix = new google.maps.DistanceMatrixService();
       directionsService = new google.maps.DirectionsService;
-      directionsRenderer = new google.maps.DirectionsRenderer;
     }
-
-    function onRowClick() {
-      if(map) {
-        var source = rows[i].cells[0].children[0].value;
-        var destination = rows[i].cells[1].children[0].value;
-        var mode = rows[i].cells[2].children[0].value;
-
-        displayRoute(source, destination, mode);
-      }
-    }
-
-
 
     function centerByAddress(address) {
       geocoder.geocode({'address':address}, function(results, status) {
@@ -99,19 +84,18 @@
         zoom: 8
       });
 
-      directionsRenderer.setMap(map);
-
       for(var i = 0; i < rows.length; i++) {
         // get entries from table
         var source = rows[i].cells[0].children[0].value;
         var destination = rows[i].cells[1].children[0].value;
         var travelMode = rows[i].cells[2].children[0].value;
+        var route = rows[i].cells[5].children[0].checked;
 
         configureRoute(i, source, destination, travelMode, fitBounds);
       }
     }
 
-    function configureRoute(index, src, dest, mode, callback) {
+    function configureRoute(index, src, dest, mode, route, callback) {
       distanceMatrix.getDistanceMatrix({
         origins: [src],
         destinations: [dest],
@@ -130,6 +114,9 @@
           // add markers
           addMarker(source, locationFree, callback);
           addMarker(destination, locationFree, callback);
+
+          // add route
+          if(route) displayRoute(source, destination, mode);
         }
       });
     }
@@ -151,7 +138,9 @@
         travelMode: mode
       }, function(response, status) {
         if(status == google.maps.DirectionsStatus.OK) {
-          directionsRenderer.setDirections(response);
+          var directionRenderer = new google.maps.DirectionsRenderer();
+          directionRenderer.setMap(map);
+          directionRenderer.setDirections(response);
         }
       });
     }
