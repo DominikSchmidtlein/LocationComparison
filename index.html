@@ -1,9 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Simple Map</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+
+
+  <title>Location Comparison</title>
   <meta name="viewport" content="initial-scale=1.0">
   <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
   <style>
     html, body {
       height: 100%;
@@ -11,30 +27,32 @@
       padding: 0;
     }
     #map {
-      height: 100%;
+      height: 500;
     }
   </style>
 </head>
 <body>
-  <div>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Source</th>
-          <th>Destination</th>
-          <th>Transportation</th>
-          <th>Distance</th>
-          <th>Duration</th>
-          <th>Display Route</th>
-        </tr>
-      </thead>
-      <tbody id="table-body">
-      </tbody>
-    </table>
-    <input type="button" value="Add Row" onclick="return addRow()">
-    <input type="button" value="Submit" onclick="return setupMap()">
+  <div class="container">
+    <div>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Destination</th>
+            <th>Transportation</th>
+            <th>Distance</th>
+            <th>Duration</th>
+            <th>Display Route</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+        </tbody>
+      </table>
+      <input type="button" value="Add Row" onclick="return addRow()">
+      <input type="button" value="Submit" onclick="return setupMap()">
+    </div>
+    <div id="map"></div>
   </div>
-  <div id="map"></div>
   <template id="row-template">
     <tr>
       <td><input type="text" name="source-address"></td>
@@ -91,7 +109,7 @@
         var travelMode = rows[i].cells[2].children[0].value;
         var route = rows[i].cells[5].children[0].checked;
 
-        configureRoute(i, source, destination, travelMode, fitBounds);
+        configureRoute(i, source, destination, travelMode, route, fitBounds);
       }
     }
 
@@ -111,7 +129,7 @@
           // update table
           populateRow(index, source, destination, mode, distance, duration);
 
-          // add markers
+          // add marker 
           addMarker(source, locationFree, callback);
           addMarker(destination, locationFree, callback);
 
@@ -155,10 +173,12 @@
 
     function addMarker(address, condition, callback) {
       geocode(address, function(location) {
-        var marker = new google.maps.Marker({
-        position: location
-        });
         if(condition(location)) {
+          var marker = new google.maps.Marker({
+          position: location,
+          title: address
+          });
+        
           marker.setMap(map);
           markers.push(marker);
           if (callback) callback();
