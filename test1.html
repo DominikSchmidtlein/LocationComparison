@@ -13,21 +13,12 @@
     #map {
       height: 100%;
     }
+    #table-body tr:hover {
+      background-color: yellow;
+    }
   </style>
 </head>
 <body>
-  <!-- <form>
-    <input type="textbox" name="address-source" placeholder="center address">
-    <input type="textbox" name="address-destination" placeholder="compare address">
-    <input type="textbox" name="address-destination" placeholder="compare address">
-    <input type="textbox" name="address-destination" placeholder="compare address">
-    <input type="textbox" name="address-destination" placeholder="compare address">
-    <input type="radio" name="transportation" value="DRIVING" checked>Car
-    <input type="radio" name="transportation" value="TRANSIT">Transit
-    <input type="radio" name="transportation" value="BICYCLING">Bike
-    <input type="radio" name="transportation" value="WALKING">Walk
-    <input type="button" value="Submit" onclick="return calculateDistances()">
-  </form> -->
   <div>
     <table border="1">
       <thead>
@@ -43,11 +34,11 @@
       </tbody>
     </table>
     <input type="button" value="Add Row" onclick="return addRow()">
-    <input type="button" value="Submit" onclick="return calculateDistances()">
+    <input type="button" value="Submit" onclick="return setupMap()">
   </div>
   <div id="map"></div>
   <template id="row-template">
-    <tr>
+    <tr onclick="return onRowClick()">
       <td><input type="text" name="source-address"></input></td>
       <td><input type="text" name="destination-address"></input></td>
       <td>
@@ -77,6 +68,18 @@
       directionsRenderer = new google.maps.DirectionsRenderer;
     }
 
+    function onRowClick() {
+      if(map) {
+        var source = rows[i].cells[0].children[0].value;
+        var destination = rows[i].cells[1].children[0].value;
+        var mode = rows[i].cells[2].children[0].value;
+
+        displayRoute(source, destination, mode);
+      }
+    }
+
+
+
     function centerByAddress(address) {
       geocoder.geocode({'address':address}, function(results, status) {
         if (status == google.maps.GeocoderStatus.OK) {
@@ -87,69 +90,65 @@
       });
     }
     
-
-
-    function calculateDistances() {
-      markers = [];
-      // get sources and destinations and travel modes
+    function setupMap() {
       var rows = document.getElementById('table-body').children;
-    
-      var sources = [rows.length];
-      var destinations = [rows.length];
-      var travelModes = [rows.length];
+      markers = [];
+
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: {lat: 0, lng: 0},
+        zoom: 8
+      });
+
+      directionsRenderer.setMap(map);
 
       for(var i = 0; i < rows.length; i++) {
-        sources[i] = rows[i].cells[0].children[0].value;
-        destinations[i] = rows[i].cells[1].children[0].value;
-        travelModes[i] = rows[i].cells[2].children[0].value;
-      }
+        // get entries from table
+        var source = rows[i].cells[0].children[0].value;
+        var destination = rows[i].cells[1].children[0].value;
+        var travelMode = rows[i].cells[2].children[0].value;
 
+        configureRoute(i, source, destination, travelMode, fitBounds);
+      }
+    }
+
+    function configureRoute(index, src, dest, mode, callback) {
       distanceMatrix.getDistanceMatrix({
-        origins: [sources[0]],
-        destinations: destinations,
-        travelMode: travelModes[0]
+        origins: [src],
+        destinations: [dest],
+        travelMode: mode
       }, function(response, status) {
         if (status == google.maps.DistanceMatrixStatus.OK) {
-          sources[0] = response.originAddresses[0];
-          destinations = response.destinationAddresses;
 
-          map = new google.maps.Map(document.getElementById('map'), {
-            center: {lat: 0, lng: 0},
-            zoom: 8
-          });
+          var source = response.originAddresses[0];
+          var destination = response.destinationAddresses[0];
+          var distance = response.rows[0].elements[0].distance.text;
+          var duration = response.rows[0].elements[0].duration.text;
 
-          directionsRenderer.setMap(map);
+          // update table
+          populateRow(index, source, destination, mode, distance, duration);
 
-          geocode(sources[0], addMarker, null);
-
-          var results = response.rows[0].elements;
-          for (var j = 0; j < results.length; j++) {
-            populateRow(j, sources[0], destinations[j], travelModes[0], results[j].distance.text, results[j].duration.text);
-            
-            geocode(destinations[j], addMarker, fitBounds);
-
-            // display directions on map
-            // directionsService.route({
-            //   origin: source,
-            //   destination: destinations[j],
-            //   travelMode: travelMode
-            // }, function(response, status) {
-            //   if(status == google.maps.DirectionsStatus.OK) {
-            //     directionsRenderer.setDirections(response);
-            //   }
-            // });
-
-            getRoute(sources[0], destinations[0], travelModes[0]);
-          }
+          // add markers
+          addMarker(source, locationFree, callback);
+          addMarker(destination, locationFree, callback);
         }
       });
     }
 
-    function getRoute(src, dest, tMode) {
+    function locationFree(location) {
+      for (var i = 0; i < markers.length; i ++) {
+        if(markers[i].getPosition() == location) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // display directions on map
+    function displayRoute(src, dest, mode) {
       directionsService.route({
         origin: src,
         destination: dest,
-        travelMode: tMode
+        travelMode: mode
       }, function(response, status) {
         if(status == google.maps.DirectionsStatus.OK) {
           directionsRenderer.setDirections(response);
@@ -157,23 +156,25 @@
       });
     }
 
-    function geocode(address, marker, callback) {
+    function geocode(address, callback) {
       geocoder.geocode({'address': address}, function(results, status) {
         if (status == google.maps.GeocoderStatus.OK) {
-          if(marker) marker(results[0].geometry.location);
-          if (callback) callback();  
-          return results[0].geometry.location;
+          callback(results[0].geometry.location);
         }
       });
     }
 
-    function addMarker(location) {
-      var marker = new google.maps.Marker({
-        position: location,
-        map: map
+    function addMarker(address, condition, callback) {
+      geocode(address, function(location) {
+        var marker = new google.maps.Marker({
+        position: location
+        });
+        if(condition(location)) {
+          marker.setMap(map);
+          markers.push(marker);
+          if (callback) callback();
+        }
       });
-      markers.push(marker);
-      return marker;
     }
 
     function fitBounds() {
@@ -198,6 +199,17 @@
       tableRow.children[2].children[0].value = trans;
       tableRow.children[3].innerHTML = distance;
       tableRow.children[4].innerHTML = duration;
+    }
+
+    function getRowData(index) {
+      var source = rows[index].cells[0].children[0].value;
+      var destination = rows[index].cells[1].children[0].value;
+      var travelMode = rows[index].cells[2].children[0].value;
+      return {
+        source: source,
+        destination: destination,
+        travelMode: travelMode
+      };
     }
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsLNoI0qIGImUA31Fbz9YZeAZXMMmHktg&callback=initMap"async defer></script>
