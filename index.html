@@ -14,9 +14,7 @@
 
 
   <title>Location Comparison</title>
-  <meta name="viewport" content="initial-scale=1.0">
   <meta charset="utf-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
@@ -27,38 +25,46 @@
       padding: 0;
     }
     #map {
-      height: 500;
+      height: 800px;
+      /*width: 80%;*/
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Source</th>
-            <th>Destination</th>
-            <th>Transportation</th>
-            <th>Distance</th>
-            <th>Duration</th>
-            <th>Display Route</th>
-          </tr>
-        </thead>
-        <tbody id="table-body">
-        </tbody>
-      </table>
-      <input type="button" value="Add Row" onclick="return addRow()">
-      <input type="button" value="Submit" onclick="return setupMap()">
+    <div class="row">
+      <div class="table-striped">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Transportation</th>
+              <th>Distance</th>
+              <th>Duration</th>
+              <th>Display Route</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-group">
+        <input type="button" class="btn btn-primary" value="Add Row" onclick="return addRow()">
+        <input type="button" class="btn btn-primary" value="Submit" onclick="return setupMap()">
+      </div>
     </div>
-    <div id="map"></div>
+    <br>
+    <div class="row">
+      <div class="col-sm-12" id="map"></div>
+    </div>
   </div>
   <template id="row-template">
     <tr>
-      <td><input type="text" name="source-address"></td>
-      <td><input type="text" name="destination-address"></td>
-      <td>
-        <select name="travel-mode">
+      <td class="form-group"><input type="text" class="form-control" name="source-address"></td>
+      <td class="form-group"><input type="text" class="form-control" name="destination-address"></td>
+      <td class="form-group">
+        <select name="travel-mode" class="form-control">
           <option value="DRIVING">Car</option>
           <option value="TRANSIT">Transit</option>
           <option value="BICYCLING">Bike</option>
@@ -67,7 +73,7 @@
       </td>
       <td name="distance"></td>
       <td name="duration"></td>
-      <td><input type="checkbox"></td>
+      <td><input type="checkbox" class="checkbox"></td>
     </tr>
   </template>
   <script>
