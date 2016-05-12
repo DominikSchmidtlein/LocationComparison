@@ -28,6 +28,23 @@
       height: 500px;
     }
   </style>
+  <template id="row-template">
+    <tr>
+      <td class="form-group"><input type="text" class="form-control" name="source-address"></td>
+      <td class="form-group"><input type="text" class="form-control" name="destination-address"></td>
+      <td class="form-group">
+        <select name="travel-mode" class="form-control">
+          <option value="DRIVING">Car</option>
+          <option value="TRANSIT">Transit</option>
+          <option value="BICYCLING">Bike</option>
+          <option value="WALKING">Walk</option>
+        </select>
+      </td>
+      <td name="distance"></td>
+      <td name="duration"></td>
+      <td><input type="checkbox" class="checkbox"></td>
+    </tr>
+  </template>
 </head>
 <body>
   <div class="container">
@@ -59,24 +76,8 @@
     <div class="row">
       <div class="col-sm-12" id="map"></div>
     </div>
+    <br>
   </div>
-  <template id="row-template">
-    <tr>
-      <td class="form-group"><input type="text" class="form-control" name="source-address"></td>
-      <td class="form-group"><input type="text" class="form-control" name="destination-address"></td>
-      <td class="form-group">
-        <select name="travel-mode" class="form-control">
-          <option value="DRIVING">Car</option>
-          <option value="TRANSIT">Transit</option>
-          <option value="BICYCLING">Bike</option>
-          <option value="WALKING">Walk</option>
-        </select>
-      </td>
-      <td name="distance"></td>
-      <td name="duration"></td>
-      <td><input type="checkbox" class="checkbox"></td>
-    </tr>
-  </template>
   <script>
     var map;
     var geocoder;
@@ -163,9 +164,13 @@
         travelMode: mode
       }, function(response, status) {
         if(status == google.maps.DirectionsStatus.OK) {
-          var directionRenderer = new google.maps.DirectionsRenderer();
-          directionRenderer.setMap(map);
-          directionRenderer.setDirections(response);
+          var directionRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            preserveViewport: true,
+            suppressMarkers: true,
+            suppressBicyclingLayer: true,
+            directions: response
+          });
         }
       });
     }
@@ -182,8 +187,8 @@
       geocode(address, function(location) {
         if(condition(location)) {
           var marker = new google.maps.Marker({
-          position: location,
-          title: address
+            position: location,
+            title: address
           });
         
           marker.setMap(map);
@@ -200,9 +205,9 @@
       }
       map.fitBounds(bounds);
     }
-
-    var rowTemplate = document.getElementById("row-template");
+    
     function addRow() {
+      var rowTemplate = document.getElementById("row-template");
       var tableBody = document.getElementById("table-body");
       var clone = document.importNode(rowTemplate.cloneNode(true).content, true);
       tableBody.appendChild(clone);
