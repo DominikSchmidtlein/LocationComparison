@@ -55,8 +55,8 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Source</th>
-              <th>Destination</th>
+              <th>Source <a href="" onclick="return openFile(0)"><span class="glyphicon glyphicon-upload"></span></a></th>
+              <th>Destination <a href="" onclick="return openFile(1)"><span class="glyphicon glyphicon-upload"></span></a></th>
               <th>Transportation</th>
               <th>Distance</th>
               <th>Duration</th>
@@ -206,6 +206,7 @@
       map.fitBounds(bounds);
     }
     
+    // render map at the highest zoom where all markers are visible
     function addRow() {
       var rowTemplate = document.getElementById("row-template");
       var tableBody = document.getElementById("table-body");
@@ -215,11 +216,11 @@
 
     function populateRow(index, src, dest, trans, distance, duration) {
       var tableRow = document.getElementById("table-body").children[index];
-      tableRow.children[0].children[0].value = src;
-      tableRow.children[1].children[0].value = dest;
-      tableRow.children[2].children[0].value = trans;
-      tableRow.children[3].innerHTML = distance;
-      tableRow.children[4].innerHTML = duration;
+      if(src) tableRow.children[0].children[0].value = src;
+      if(dest) tableRow.children[1].children[0].value = dest;
+      if(trans) tableRow.children[2].children[0].value = trans;
+      if(distance) tableRow.children[3].innerHTML = distance;
+      if(duration) tableRow.children[4].innerHTML = duration;
     }
 
     function getRowData(index) {
@@ -232,6 +233,45 @@
         travelMode: travelMode
       };
     }
+
+    function openFile(index) {
+      var fileSelector = document.createElement('input');
+      fileSelector.setAttribute('type', 'file');
+      fileSelector.onchange = function(result) {
+        readFile(result, index);
+      };
+      fileSelector.click();
+      return false;
+    }
+
+    function readFile(result, index) {
+      var file = result.target.files[0];
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        processFile(this.result, index);
+      };
+      reader.readAsText(file);
+    }
+
+    function processFile(result, index) {
+      var rows = document.getElementById('table-body').children.length;
+      
+      var lines = result.split('\n');
+      for(var i = 0; i < lines.length - 1; i++) {
+        if(rows <= i) addRow();
+        var src = index == 0 ? lines[i] : null;
+        var dest = index == 1 ? lines[i] : null;
+        populateRow(i, src, dest, null, null, null, null);
+      }
+    }
+
+    function clearTable() {
+        var old_tBody = document.getElementById("table-body");
+        var new_tBody = document.createElement('tbody');
+        new_tBody.id = "table-body";
+        old_tBody.parentNode.replaceChild(new_tBody, old_tBody);
+    }
+
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsLNoI0qIGImUA31Fbz9YZeAZXMMmHktg&callback=initMap"async defer></script>
 </body>
