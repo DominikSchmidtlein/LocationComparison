@@ -77,8 +77,10 @@
           </tbody>
         </table>
       </div>
+      <button type="button" class="btn btn-default" onclick="return toCSV()">
+          <span class="glyphicon glyphicon-download"></span> Download
+        </button>
       <div class="btn-group">
-        <input type="button" class="btn btn-primary" value="To Excel" onclick="return toCSV()">
         <input type="button" class="btn btn-primary" value="Add Row" onclick="return addRow()">
         <input type="button" class="btn btn-primary" value="Submit" onclick="return setupMap()">
       </div>
@@ -286,9 +288,23 @@
         csv += '"' + rows[i].cells[5].children[0].checked + '"' + ", ";
         csv += "\n"
       }
-      console.log(csv);
-      return csv;
+      download('table.csv', csv);
     }
+
+    function download(filename, text) {
+      var dl = document.createElement('a');
+      dl.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+      dl.download = filename;
+
+      if (document.createEvent) {
+          var event = document.createEvent('MouseEvents');
+          event.initEvent('click', true, true);
+          dl.dispatchEvent(event);
+      }
+      else {
+          dl.click();
+      }
+  }
 
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsLNoI0qIGImUA31Fbz9YZeAZXMMmHktg&callback=initMap"async defer></script>
