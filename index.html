@@ -51,19 +51,19 @@
     <h1>Location Comparison</h1>
     <br>
     <div class="row">
-      <div class="table-striped">
+      <div class="col-sm-12 table-striped">
         <table class="table">
           <thead>
             <tr>
               <th>Source 
-                <a href="" onclick="return" data-toggle="tooltip" title="Lock Column">
-                <span class="glyphicon glyphicon-lock"></span></a>
+                <!-- <a href="" onclick="return" data-toggle="tooltip" title="Lock Column">
+                <span class="glyphicon glyphicon-lock"></span></a> -->
                 <a href="" onclick="return openFile(0)" data-toggle="tooltip" title="Upload">
                 <span class="glyphicon glyphicon-upload"></span></a>
               </th>
               <th>Destination 
-                <a href="" onclick="return" data-toggle="tooltip" title="Lock Column">
-                <span class="glyphicon glyphicon-lock"></span></a>
+                <!-- <a href="" onclick="return" data-toggle="tooltip" title="Lock Column">
+                <span class="glyphicon glyphicon-lock"></span></a> -->
                 <a href="" onclick="return openFile(1)" data-toggle="tooltip" title="Upload">
                 <span class="glyphicon glyphicon-upload"></span></a>
               </th>
@@ -77,12 +77,21 @@
           </tbody>
         </table>
       </div>
-      <button type="button" class="btn btn-default" onclick="return toCSV()">
+      <button type="button" class="btn btn-default" onclick="return toCSV()" 
+      data-toggle="collapse" data-target="#alert">
           <span class="glyphicon glyphicon-download"></span> Download
-        </button>
+      </button>
       <div class="btn-group">
         <input type="button" class="btn btn-primary" value="Add Row" onclick="return addRow()">
         <input type="button" class="btn btn-primary" value="Submit" onclick="return setupMap()">
+      </div>
+      <br>
+      <br>
+      <div id="alert" class="collapse">
+        <div class="alert alert-info">
+          <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+          <strong>Info!</strong> CSV files can be oppened in MS Excel or a likewise program.
+        </div>
       </div>
     </div>
     <br>
