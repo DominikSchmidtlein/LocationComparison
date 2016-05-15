@@ -1,33 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
-  <!-- Latest compiled and minified CSS -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-
-  <!-- Optional theme -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
-
-  <!-- Latest compiled and minified JavaScript -->
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
-
-
-
   <title>Location Comparison</title>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- jquery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    #map {
-      height: 600px;
-    }
-  </style>
+  <!-- BOOTSTRAP -->
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" type="text/css" href="css/index.css">
+
+  <script src="js/index.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/maps.js"></script>
+
   <template id="row-template">
     <tr>
       <td class="form-group"><input type="text" class="form-control" name="source-address"></td>
@@ -90,7 +86,7 @@
       <div id="alert" class="collapse">
         <div class="alert alert-info">
           <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-          <strong>Info!</strong> CSV files can be oppened in MS Excel or a likewise program.
+          <strong>Info!</strong> CSV files can be oppened in MS Excel or an equivalent program.
         </div>
       </div>
     </div>
@@ -100,225 +96,8 @@
     </div>
     <br>
   </div>
-  <script>
-    var map;
-    var geocoder;
-    var distanceMatrix;
-    var directionsService;
-    var markers;
-
-    addRow();
-
-    function initMap() {
-      geocoder = new google.maps.Geocoder();
-      distanceMatrix = new google.maps.DistanceMatrixService();
-      directionsService = new google.maps.DirectionsService;
-    }
-
-    function centerByAddress(address) {
-      geocoder.geocode({'address':address}, function(results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-          map.setCenter(results[0].geometry.location);
-        } else {
-          alert("Unsuccessful");
-        }
-      });
-    }
-    
-    function setupMap() {
-      var rows = document.getElementById('table-body').children;
-      markers = [];
-
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: 0, lng: 0},
-        zoom: 8
-      });
-
-      for(var i = 0; i < rows.length; i++) {
-        // get entries from table
-        var source = rows[i].cells[0].children[0].value;
-        var destination = rows[i].cells[1].children[0].value;
-        var travelMode = rows[i].cells[2].children[0].value;
-        var route = rows[i].cells[5].children[0].checked;
-
-        configureRoute(i, source, destination, travelMode, route, fitBounds);
-      }
-    }
-
-    function configureRoute(index, src, dest, mode, route, callback) {
-      distanceMatrix.getDistanceMatrix({
-        origins: [src],
-        destinations: [dest],
-        travelMode: mode
-      }, function(response, status) {
-        if (status == google.maps.DistanceMatrixStatus.OK) {
-
-          var source = response.originAddresses[0];
-          var destination = response.destinationAddresses[0];
-          var distance = response.rows[0].elements[0].distance.text;
-          var duration = response.rows[0].elements[0].duration.text;
-
-          // update table
-          populateRow(index, source, destination, mode, distance, duration);
-
-          // add marker 
-          addMarker(source, locationFree, callback);
-          addMarker(destination, locationFree, callback);
-
-          // add route if selected in table
-          if(route) displayRoute(source, destination, mode);
-        }
-      });
-    }
-
-    function locationFree(location) {
-      for (var i = 0; i < markers.length; i ++) {
-        if(markers[i].getPosition() == location) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    // display directions on map
-    function displayRoute(src, dest, mode) {
-      directionsService.route({
-        origin: src,
-        destination: dest,
-        travelMode: mode
-      }, function(response, status) {
-        if(status == google.maps.DirectionsStatus.OK) {
-          var directionRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            preserveViewport: true,
-            suppressMarkers: true,
-            suppressBicyclingLayer: true,
-            directions: response
-          });
-        }
-      });
-    }
-
-    function geocode(address, callback) {
-      geocoder.geocode({'address': address}, function(results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-          callback(results[0].geometry.location);
-        }
-      });
-    }
-
-    function addMarker(address, condition, callback) {
-      geocode(address, function(location) {
-        if(condition(location)) {
-          var marker = new google.maps.Marker({
-            position: location,
-            title: address
-          });
-        
-          marker.setMap(map);
-          markers.push(marker);
-          if (callback) callback();
-        }
-      });
-    }
-
-    function fitBounds() {
-      var bounds = new google.maps.LatLngBounds();
-      for (var i = 0; i <  markers.length; i++) {
-        bounds.extend(markers[i].getPosition());
-      }
-      map.fitBounds(bounds);
-    }
-    
-    // render map at the highest zoom where all markers are visible
-    function addRow() {
-      var rowTemplate = document.getElementById("row-template");
-      var tableBody = document.getElementById("table-body");
-      var clone = document.importNode(rowTemplate.cloneNode(true).content, true);
-      tableBody.appendChild(clone);
-    }
-
-    function populateRow(index, src, dest, trans, distance, duration) {
-      var tableRow = document.getElementById("table-body").children[index];
-      if(src) tableRow.children[0].children[0].value = src;
-      if(dest) tableRow.children[1].children[0].value = dest;
-      if(trans) tableRow.children[2].children[0].value = trans;
-      if(distance) tableRow.children[3].innerHTML = distance;
-      if(duration) tableRow.children[4].innerHTML = duration;
-    }
-
-    function openFile(index) {
-      var fileSelector = document.createElement('input');
-      fileSelector.setAttribute('type', 'file');
-      fileSelector.onchange = function(result) {
-        readFile(result, index);
-      };
-      fileSelector.click();
-      return false;
-    }
-
-    function readFile(result, index) {
-      var file = result.target.files[0];
-      var reader = new FileReader();
-      reader.onload = function(event) {
-        processFile(this.result, index);
-      };
-      reader.readAsText(file);
-    }
-
-    function processFile(result, index) {
-      var rows = document.getElementById('table-body').children.length;
-      
-      var lines = result.split('\n');
-      for(var i = 0; i < lines.length - 1; i++) {
-        if(rows <= i) addRow();
-        var src = index == 0 ? lines[i] : null;
-        var dest = index == 1 ? lines[i] : null;
-        populateRow(i, src, dest, null, null, null, null);
-      }
-    }
-
-    function clearTable() {
-      var old_tBody = document.getElementById("table-body");
-      var new_tBody = document.createElement('tbody');
-      new_tBody.id = "table-body";
-      old_tBody.parentNode.replaceChild(new_tBody, old_tBody);
-    }
-
-    function toCSV() {
-      var rows = document.getElementById('table-body').children;
-      if(!rows) alert("Table is empty.");
-
-      var csv = "";
-      for(var i = 0; i < rows.length; i++) {
-        csv += '"' + rows[i].cells[0].children[0].value + '"' + ", ";
-        csv += '"' + rows[i].cells[1].children[0].value + '"' + ", ";
-        csv += '"' + rows[i].cells[2].children[0].value + '"' + ", ";
-        csv += '"' + rows[i].cells[3].innerHTML + '"' + ", ";
-        csv += '"' + rows[i].cells[4].innerHTML + '"' + ", ";
-        csv += '"' + rows[i].cells[5].children[0].checked + '"' + ", ";
-        csv += "\n"
-      }
-      download('table.csv', csv);
-    }
-
-    function download(filename, text) {
-      var dl = document.createElement('a');
-      dl.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
-      dl.download = filename;
-
-      if (document.createEvent) {
-          var event = document.createEvent('MouseEvents');
-          event.initEvent('click', true, true);
-          dl.dispatchEvent(event);
-      }
-      else {
-          dl.click();
-      }
-  }
-
-  </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsLNoI0qIGImUA31Fbz9YZeAZXMMmHktg&callback=initMap"async defer></script>
+  <script>addRow();</script>
 </body>
 </html>
 
