@@ -25,7 +25,7 @@
       padding: 0;
     }
     #map {
-      height: 500px;
+      height: 600px;
     }
   </style>
   <template id="row-template">
@@ -48,11 +48,11 @@
 </head>
 <body>
   <div class="container">
-    <h1>Location Comparison</h1>
+    <h1 class="text-center">Location Comparison</h1>
     <br>
     <div class="row">
-      <div class="col-sm-12 table-striped">
-        <table class="table">
+      <div class="col-sm-12">
+        <table class="table table-striped">
           <thead>
             <tr>
               <th>Source 
@@ -77,11 +77,11 @@
           </tbody>
         </table>
       </div>
-      <button type="button" class="btn btn-default" onclick="return toCSV()" 
-      data-toggle="collapse" data-target="#alert">
-          <span class="glyphicon glyphicon-download"></span> Download
-      </button>
-      <div class="btn-group">
+        <button type="button" class="btn btn-default" onclick="return toCSV()" 
+        data-toggle="collapse" data-target="#alert">
+            <span class="glyphicon glyphicon-download"></span> Download
+        </button>
+      <div class="btn-group pull-right">
         <input type="button" class="btn btn-primary" value="Add Row" onclick="return addRow()">
         <input type="button" class="btn btn-primary" value="Submit" onclick="return setupMap()">
       </div>
@@ -106,6 +106,8 @@
     var distanceMatrix;
     var directionsService;
     var markers;
+
+    addRow();
 
     function initMap() {
       geocoder = new google.maps.Geocoder();
